@@ -1,1 +1,16 @@
-    .venv/
+# Virtual environment
+.venv/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# uv's pinned interpreter version
+.python-version
+
+# Editor
+.vscode/
+.idea/
+
+# MediaPipe model bundles (see README for download command)
+models/
