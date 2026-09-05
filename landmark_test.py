@@ -13,6 +13,15 @@ VisionRunningMode = mp.tasks.vision.RunningMode
 
 WINDOW = "Landmarks"
 
+HAND_CONNECTIONS = [
+    (0, 1), (1, 2), (2, 3), (3, 4),           # thumb
+    (0, 5), (5, 6), (6, 7), (7, 8),           # index
+    (9, 10), (10, 11), (11, 12),              # middle
+    (13, 14), (14, 15), (15, 16),             # ring
+    (0, 17), (17, 18), (18, 19), (19, 20),    # pinky
+    (5, 9), (9, 13), (13, 17),                # palm
+]
+
 def main() -> None:
     options = HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path="models/hand_landmarker.task"),
@@ -23,6 +32,8 @@ def main() -> None:
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         raise RuntimeError("Could not open camera.")
+
+    cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL)
 
     with HandLandmarker.create_from_options(options) as landmarker:
         try:
@@ -39,9 +50,32 @@ def main() -> None:
                 timestamp_ms = int(time.time() * 1000)
                 result = landmarker.detect_for_video(mp_image, timestamp_ms)
 
-                if result.hand_landmarks:
-                    wrist = result.hand_landmarks[0][0]
-                    print(f"hands: {len(result.hand_landmarks)} wrist x={wrist.x:.3f} y={wrist.y:.3f}")
+            #    if result.hand_landmarks:
+            #        wrist = result.hand_landmarks[0][0]
+            #        print(f"hands: {len(result.hand_landmarks)} wrist x={wrist.x:.3f} y={wrist.y:.3f}")
+                
+                height, width = frame.shape[:2]
+
+                for hand in result.hand_landmarks:
+                    points = [
+                        (int(lm.x * width), int(lm.y * height))
+                        for lm in hand
+                    ]
+
+                    for start, end in HAND_CONNECTIONS:
+                        cv2.line(frame, points[start], points[end], (0, 255, 0), 2)
+
+                    for index, point in enumerate(points):
+                        cv2.circle(frame, point, 4, (0, 0, 255), -1)
+                        cv2.putText(
+                            frame,
+                            str(index),
+                            point,
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.3,
+                            (255, 255, 255),
+                            1,
+                        )
 
                 cv2.imshow(WINDOW, frame)
 
