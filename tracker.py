@@ -1,6 +1,8 @@
 import os
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 
+import hand_utils
+
 import time
 
 import cv2
@@ -61,6 +63,15 @@ def main() -> None:
                         (int(lm.x * width), int(lm.y * height))
                         for lm in hand
                     ]
+
+                    ratio = hand_utils.pinch_ratio(points)
+                    pinched = hand_utils.is_pinching(points)
+
+                    label = f"{ratio:.2f} {'PINCH' if pinched else ''}"
+                    cv2.putText(
+                        frame, label, points[0],
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2,
+                    )
 
                     for start, end in HAND_CONNECTIONS:
                         cv2.line(frame, points[start], points[end], (0, 255, 0), 2)
