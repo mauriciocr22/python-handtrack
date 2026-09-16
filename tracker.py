@@ -45,6 +45,8 @@ def main() -> None:
 
     with HandLandmarker.create_from_options(options) as landmarker:
         try:
+            shape_active = False
+
             while True:
                 ok, frame = cap.read()
                 if not ok:
@@ -103,7 +105,15 @@ def main() -> None:
                 left = hands.get("Left")
                 right = hands.get("Right")
 
-                shape = hand_utils.build_shape(left, right)
+                if left is not None and right is not None:
+                    if not shape_active and hand_utils.pinches_touching(left, right):
+                        shape_active = True
+
+                if shape_active:
+                    shape = hand_utils.build_shape(left, right)
+                else:
+                    shape = []
+
 
                 if len(shape) >= 2:
                     for i in range(len(shape)):
@@ -114,7 +124,7 @@ def main() -> None:
                 for vertex in shape:
                     cv2.circle(frame, vertex, 8, (255, 0, 255), -1)
 
-                status = f"L: {describe(left)} | R: {describe(right)}"
+                status = f"{'ACTIVE' if shape_active else 'IDLE'}"
 
                 cv2.putText(
                     frame, status, (10, 30),

@@ -69,3 +69,20 @@ def build_shape(
         vertices.extend(reversed(hand_vertices(right)))
 
     return vertices
+
+def pinches_touching(
+    left: HandState,
+    right: HandState,
+    threshold: float = 0.6,
+) -> bool:
+    if not left.pinching or not right.pinching:
+        return False
+
+    left_point = hand_vertices(left)[0]
+    right_point = hand_vertices(right)[0]
+
+    scale = (hand_scale(left.points) + hand_scale(right.points)) / 2
+    if scale == 0:
+        return False
+
+    return distance(left_point, right_point) / scale < threshold
