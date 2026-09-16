@@ -1,3 +1,4 @@
+from operator import index
 import os
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 
@@ -23,6 +24,11 @@ HAND_CONNECTIONS = [
     (0, 17), (17, 18), (18, 19), (19, 20),    # pinky
     (5, 9), (9, 13), (13, 17),                # palm
 ]
+
+def describe (hand: hand_utils.HandState | None) -> str:
+    if hand is None:
+        return "-"
+    return "PINCH" if hand.pinching else "OPEN"
 
 def main() -> None:
     options = HandLandmarkerOptions(
@@ -57,36 +63,52 @@ def main() -> None:
             #        print(f"hands: {len(result.hand_landmarks)} wrist x={wrist.x:.3f} y={wrist.y:.3f}")
                 
                 height, width = frame.shape[:2]
+                hands = {}
 
-                for hand in result.hand_landmarks:
+                for hand_index, hand in enumerate(result.hand_landmarks):
                     points = [
                         (int(lm.x * width), int(lm.y * height))
                         for lm in hand
                     ]
 
-                    ratio = hand_utils.pinch_ratio(points)
-                    pinched = hand_utils.is_pinching(points)
+                    raw_side = result.handedness[hand_index][0].category_name
+                    state = hand_utils.read_hand(points, raw_side)
+                    hands[state.side] = state
 
-                    label = f"{ratio:.2f} {'PINCH' if pinched else ''}"
+                    # print(state)
+
+                    label = f"{state.side} {'PINCH' if state.pinching else ''}"
                     cv2.putText(
                         frame, label, points[0],
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2,
                     )
 
-                    for start, end in HAND_CONNECTIONS:
-                        cv2.line(frame, points[start], points[end], (0, 255, 0), 2)
+                    # for start, end in HAND_CONNECTIONS:   SHOW SKELETON
+                    #     cv2.line(frame, points[start], points[end], (0, 255, 0), 2)
 
-                    for index, point in enumerate(points):
+                    for index, point in enumerate(points):    
                         cv2.circle(frame, point, 4, (0, 0, 255), -1)
-                        cv2.putText(
-                            frame,
-                            str(index),
-                            point,
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.3,
-                            (255, 255, 255),
-                            1,
-                        )
+                #        cv2.putText(   SHOW INDEXES
+                #            frame,
+                #            str(index),
+                #            point,
+                #            cv2.FONT_HERSHEY_SIMPLEX,
+                #            0.3,
+                #            (255, 255, 255),
+                #            1,
+                #        )
+
+                print(hands)
+
+                left = hands.get("Left")
+                right = hands.get("Right")
+
+                status = f"L: {describe(left)} | R: {describe(right)}"
+
+                cv2.putText(
+                    frame, status, (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2,
+                )
 
                 cv2.imshow(WINDOW, frame)
 

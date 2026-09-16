@@ -1,4 +1,6 @@
 import math
+from dataclasses import dataclass
+
 Point = tuple[int, int]
 
 WRIST = 0
@@ -17,5 +19,27 @@ def pinch_ratio(points: list[Point]) -> float:
     if scale == 0:
         return 1.0
     return distance(points[THUMB_TIP], points[INDEX_TIP]) / scale
-def is_pinching(points: list[Point], threshold: float = 0.2) -> bool:
+
+def is_pinching(points: list[Point], threshold: float = 0.25) -> bool:
     return pinch_ratio(points) < threshold
+
+def correct_side(side: str) -> str:
+    # Frame is flipped due to cv2.flip(frame, 1), so it was needed to correct the side.
+    return "Right" if side == "Left" else "Left"
+
+@dataclass
+class HandState:
+    side: str
+    points: list[Point]
+    pinching: bool
+    thumb_tip: Point
+    index_tip: Point
+
+def read_hand(points: list[Point], raw_side: str) -> HandState:
+    return HandState(
+        side=correct_side(raw_side),
+        points=points,
+        pinching=is_pinching(points),
+        thumb_tip=points[THUMB_TIP],
+        index_tip=points[INDEX_TIP],
+    )
