@@ -43,3 +43,29 @@ def read_hand(points: list[Point], raw_side: str) -> HandState:
         thumb_tip=points[THUMB_TIP],
         index_tip=points[INDEX_TIP],
     )
+
+def hand_vertices(hand: HandState) -> list[Point]:
+    if hand.pinching:
+        midpoint = (
+            (hand.thumb_tip[0] + hand.index_tip[0]) // 2,
+            (hand.thumb_tip[1] + hand.index_tip[1]) // 2,
+        )
+        return [midpoint]
+    return [hand.thumb_tip, hand.index_tip]
+
+def build_shape(
+        left: HandState | None,
+        right: HandState | None,
+) -> list[Point]:
+    if left is None or right is None:
+        return []
+    
+    vertices = []
+
+    if left is not None:
+        vertices.extend(hand_vertices(left))
+
+    if right is not None:
+        vertices.extend(reversed(hand_vertices(right)))
+
+    return vertices

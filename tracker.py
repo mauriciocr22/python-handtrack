@@ -103,6 +103,17 @@ def main() -> None:
                 left = hands.get("Left")
                 right = hands.get("Right")
 
+                shape = hand_utils.build_shape(left, right)
+
+                if len(shape) >= 2:
+                    for i in range(len(shape)):
+                        start = shape[i]
+                        end = shape[(i + 1) % len(shape)]
+                        cv2.line(frame, start, end, (255, 0, 255), 3)
+
+                for vertex in shape:
+                    cv2.circle(frame, vertex, 8, (255, 0, 255), -1)
+
                 status = f"L: {describe(left)} | R: {describe(right)}"
 
                 cv2.putText(
